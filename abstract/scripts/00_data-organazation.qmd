@@ -1,0 +1,105 @@
+---
+title: "Data organization for III Simposio Internacional de Ecologia"
+author: "Gabriela Dezotti"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: true
+    code-summary: "Show code"
+    code-tools: true
+    theme: cosmo
+    number-sections: true
+    self-contained: true
+execute:
+  echo: true
+  warning: false
+---
+# About this script
+**Purpose:** Organizing the data for the III Simposio Internacional de Ecologia.
+**Contact:**[gabriela.dezotti@unesp.br](mailto:gabriela.dezotti@unesp.br)
+
+```{r}
+```{r}
+#| label: setup-packages
+#| code-summary: "Load packages"
+#| message: false
+#| warning: false
+
+pkg_list <- c(
+  "tidyverse", "tidylog", "readxl", "stringi",
+  "magrittr", "clipr", "knitr", "kableExtra",        
+  "rgnparser", "flora", "DataEditR", "here"                        
+)
+
+# If necessary, install missing packages
+ new_packages <- pkg_list[!(pkg_list %in% installed.packages()[,"Package"])]
+ if(length(new_packages)) install.packages(new_packages)
+
+invisible(lapply(pkg_list, function(x) 
+  library(x, character.only = TRUE, quietly = TRUE)))
+```
+
+
+```{r}
+#| label: load-rawdata
+#| code-summary: "Load raw data"
+
+rawdata = read_csv2(
+  here::here("articles_with_ids.csv"),
+  na = c("", "NA")
+)
+
+glimpse(rawdata)
+```
+
+# Data filtering for identification
+
+```{r}
+#| label: filter-data
+#| code-summary: "Filter data"
+
+selected_articles =
+rawdata |>
+ select(c(study_id, title, year, journal, doi))
+
+ write.csv(selected_articles, here::here("01_selected_data.csv"))
+```
+
+# Organizing data for analysis
+
+
+```{r}
+#| label: organize-data
+#| code-summary: "Organize data"
+
+organized_data = 
+rawdata |>
+  select(c(study_id, species_list, list_location, nomenclatura_source, 
+  identification_method, vouchers, notes)) |>
+  mutate(
+    species_list        = tolower(species_list),
+    list_location       = tolower(list_location),
+    nomenclatura_source = tolower(nomenclatura_source),
+    identification_method = tolower(identification_method),
+    vouchers            = tolower(vouchers),
+    
+    species_list        = factor(species_list),
+    list_location       = factor(list_location),
+    nomenclatura_source = factor(nomenclatura_source),
+    vouchers            = factor(vouchers),
+    
+    identification_method = factor(
+      identification_method,
+      levels = c("no", "vague", "explicit"),
+      ordered = TRUE
+    )
+  )
+
+glimpse(organized_data)
+colSums(is.na(organized_data))
+lapply(organized_data, levels)
+
+saveRDS(organized_data, here::here("02_organized_data.rds"))
+```

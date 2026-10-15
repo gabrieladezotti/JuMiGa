@@ -1,0 +1,150 @@
+
+```{r}
+#| label: setup-packages
+#| code-summary: "Load packages"
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(janitor)
+```
+
+
+```{r}
+
+scopus_raw =
+readr::read_csv(
+  "poster/data/scopus.csv",
+  show_col_types = FALSE
+) |>
+  janitor::clean_names()
+
+names(scopus_raw)
+```
+
+
+```{r}
+#| label: filter-data
+#| code-summary: "Stratify data"
+
+scopus =
+scopus_raw |>
+  filter(
+    !is.na(source_title),
+    !is.na(year),
+    year >= 2021,
+    year <= 2025
+  ) |>
+  mutate(
+    journal = stringr::str_squish(source_title),
+    year = as.integer(year)
+  )
+
+# Considering that Vegetation Ecology and Diversity only publishes in 2025, we will delete it from the analyses.
+# Staying with the other nine journals.
+
+core_journals = c(
+  "Journal of Vegetation Science",
+  "Applied Vegetation Science",
+  "Vegetation Classification and Survey",
+  "Journal of Ecology",
+  "Journal of Plant Ecology",
+  "Plant Ecology",
+  "Plant Biosystems",
+  "Folia Geobotanica",
+  "Ecology and Evolution"
+)
+
+scopus_core = 
+scopus |>
+  filter(journal %in% core_journals)
+
+scopus_core |>
+  count(journal, sort = TRUE)
+
+nrow(scopus_core)
+
+
+scopus_core |>
+  count(journal, year) |>
+  tidyr::pivot_wider(
+    names_from = year,
+    values_from = n,
+    values_fill = 0
+  ) |>
+  arrange(journal)
+# Checking number of articles per journal and year
+```
+
+
+
+```{r}
+#| label: organize-data
+#| code-summary: "Organize data for screening"
+
+set.seed(20260920)
+
+screening_sample =
+ scopus_core |>
+  group_by(journal, year) |>
+  mutate(
+    stratum_population = n()
+  ) |>
+  group_modify(
+    ~ slice_sample(.x, n = min(5, nrow(.x)))
+  ) |>
+  ungroup() |>
+  mutate(
+    stratum_sample = pmin(5L, stratum_population),
+    inclusion_probability = stratum_sample / stratum_population,
+    sampling_weight = stratum_population / stratum_sample,
+    sampling_stratum = paste(journal, year, sep = "_"),
+    screening_decision = NA_character_,
+    exclusion_reason = NA_character_,
+    notes = NA_character_
+  ) |>
+  arrange(journal, year, title)
+
+```
+
+
+```{r}
+#| label: check-data
+nrow(screening_sample) 
+
+screening_sample |>
+  count(journal, year) |>
+  filter(n > 5)
+
+screening_sample |>
+  count(journal, sort = TRUE)
+
+screening_sample |>
+  distinct(journal, year) |>
+  nrow()
+```
+
+We included nine pre-specified international journals with continuous Scopus coverage from 2021 to 2025. Records were stratified by publication outlet and year. Within each journal–year stratum, we randomly selected up to five records; all records were retained from strata containing fewer than five records. This design yielded a balanced screening sample while preserving representation across journals and years.
+
+
+```{r}
+screening_sheet =
+screening_sample |>
+  arrange(journal, year, title)
+```
+
+
+```{r}
+readr::write_csv(
+  screening_sheet,
+  "C:/VSCode/JuMiGa/poster/data/screening.csv",
+  na = ""
+)
+
+saveRDS(
+  screening_sheet,
+  "C:/VSCode/JuMiGa/poster/data/screening.rds"
+)
+
+
+```

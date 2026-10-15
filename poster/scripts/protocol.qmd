@@ -1,0 +1,152 @@
+---
+title: "Protocol: Taxonomic transparency in vegetation-ecology studies"
+author: "Gabriela Dezotti"
+date: last-modified
+format:
+  html:
+    toc: true
+    number-sections: true
+    code-fold: true
+execute:
+  echo: true
+  warning: false
+  message: false
+bibliography: references.bib
+---
+
+## Background
+Plant-community data are increasingly reused in global databases. Such analyses depend on taxonomic identities assigned during original studies. However, procedures used to identify plant taxa, standardize nomenclature, manage unresolved taxa, and document voucher specimens are often incompletely reported.
+
+In this project, we aim to evaluate **taxonomic reporting transparency**. Here, we consider that an absent or vague description does not demonstrate that identification was inaccurate; rather, it tells the future data users that reproducing a specific taxonomic workflow may be an inaccurate decision.
+
+The initial dataset of recent studies will be retained as a pilot sample. 
+The expanded review will use a preregistered, reproducible search, screening, sampling, and coding workflow.
+
+## Objective
+Quantify how transparently plant identification and nomenclatural procedures are reported in empirical vegetation-community studies and to identify study characteristics associated with reporting practices.
+
+## Research questions
+
+1. How frequently do eligible studies provide a reusable species list, report plant identification procedures, cite a nomenclatural backbone, and mention voucher or herbarium material?
+1.1 Are studies that provide a species list more likely to report any plant identification information?
+1.2 Are studies that cite a nomenclatural source more likely to report any plant identification information?
+2. Do reporting practices vary through time, among study designs, and among taxonomic scopes?
+
+Our review focuses on what is **reported in articles and linked supplementary files**. 
+It does not infer whether unreported procedures were performed, whether particular taxonomic resources were appropriate, or whether identifications were correct. We only consider what is **REPORTED** in the articles and supplementary files.
+
+## Eligibility criteria
+#### Inclusion criteria
+Articles will be included when all of the following apply:
+
+a. The publication is a research article.
+
+b. The study reports **empirical data** on plant communities, vegetation, floristic composition, or vegetation plots.
+
+c. The study includes **primary field-derived plant taxonomic data**.
+
+d. Plant taxa are identified at least partly below the level of the broadest vegetation category (e.g., species, genus, family, morphospecies, or explicitly unresolved taxa).
+
+#### Exclusion criteria
+Articles will be excluded when they are:
+
+a. Reviews, meta-analyses, editorials, commentaries, protocols, book reviews, corrections, or conference abstracts without full methods.
+
+b. Studies based exclusively on secondary datasets, unless they also collect and identify new plant-community data.
+
+c. Studies focused exclusively on one focal plant species without a community or vegetation survey.
+
+d. Studies of non-plant organisms only.
+
+e. Studies for which the relevant methods and supplementary files cannot be accessed after reasonable attempts.
+
+The primary search will be conducted in **Scopus**. 
+Search dates, database editions, export dates, and complete search strings will be archived in data/raw/search.csv.
+
+## Time period
+The planned publication window is 2016–2025, using complete calendar years. 
+This period balances temporal coverage with feasibility and permits descriptive assessment of whether reporting practices changed during a decade of rapid growth in open-data infrastructure and data reuse.
+
+## Search string
+
+TITLE-ABS-KEY(
+  "plant communit*"
+  OR "plant assemblage*"
+  OR "vegetation communit*"
+  OR "vegetation assemblage*"
+  OR "plant species composition"
+  OR "vegetation composition"
+  OR "floristic composition"
+  OR "vegetation survey*"
+  OR "floristic survey*"
+ / OR "vegetation plot*"
+  OR "vegetation dynamics"
+  OR phytosociolog*
+  OR relevé
+  OR releve
+)
+AND (
+  SRCTITLE("Journal of Vegetation Science")
+  OR SRCTITLE("Applied Vegetation Science")
+  OR SRCTITLE("Vegetation Classification and Survey")
+  OR SRCTITLE("Vegetation Ecology and Diversity")
+  OR SRCTITLE("Journal of Ecology")
+  OR SRCTITLE("Journal of Plant Ecology")
+  OR SRCTITLE("Plant Ecology")
+  OR SRCTITLE("Folia Geobotanica")
+  OR SRCTITLE("Plant Biosystems")
+  OR SRCTITLE("Ecology and Evolution")
+)
+AND PUBYEAR > 2020
+AND PUBYEAR < 2026
+AND DOCTYPE(ar)
+
+The string was used in 20th September 2026 and gave a total of 1.531 results. 
+
+# Screening and study selection
+
+Raw database exports will be saved without modification in data/raw/. Cleaned bibliographic records, screening decisions, coding data, and derived outputs will be stored separately. A unique study_id will be assigned before full-text coding.
+
+project/
+├── 01_protocol.qmd
+├── 02_screening.qmd
+├── 03_coding.qmd
+├── 04_analysis.qmd
+├── data/
+│   ├── raw/
+│   ├── processed/
+│   └── derived/
+├── outputs/
+│   ├── figures/
+│   └── tables/
+├── docs/
+│   ├── codebook.md
+│   └── decision_log.md
+└── references.bib
+
+Each record will be assigned one of three decisions:
+
+a.  include
+
+b. exclude
+
+c. uncertain
+
+Full-text screening
+
+Screening reliability
+
+Before the full review, two reviewers will independently screen and code a calibration set of at least 15–20 eligible candidate studies. Disagreements will be discussed, decision rules will be revised where necessary, and changes will be documented in docs/decision.qmd.
+
+PRISMA-EcoEvo flow
+A PRISMA-EcoEvo-compatible flow diagram will report:
+1. records retrieved by source;
+2. duplicates removed;
+3. records screened;
+4. records excluded at title/abstract stage;
+5. full texts assessed;
+6.  full texts excluded with reasons;
+7.  final studies included in the coded dataset.
+
+#### Sampling plan
+If the number of full-text eligible articles is feasible, all eligible studies will be coded. If not, a stratified random sample will be selected.

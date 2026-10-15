@@ -1,0 +1,442 @@
+---
+title: "Data analysis for III Simposio Internacional de Ecologia"
+author: "Gabriela Dezotti"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: true
+    code-summary: "Show code"
+    code-tools: true
+    theme: cosmo
+    number-sections: true
+    self-contained: true
+execute:
+  echo: true
+  warning: false
+---
+# About this script
+**Purpose:** 
+**Contact:**[gabriela.dezotti@unesp.br](mailto:gabriela.dezotti@unesp.br)
+
+```{r}
+#| label: setup-packages
+#| code-summary: "Load packages"
+#| message: false
+#| warning: false
+
+pkg_list <- c(
+  "tidyverse", "tidylog", "magrittr", "clipr",
+  "knitr", "kableExtra", "here", "scales"                        
+)
+
+# If necessary, install missing packages
+# new_packages <- pkg_list[!(pkg_list %in% installed.packages()[,"Package"])]
+# if(length(new_packages)) install.packages(new_packages)
+
+invisible(lapply(pkg_list, function(x) 
+  library(x, character.only = TRUE, quietly = TRUE)))
+
+  windowsFonts(Aptos = windowsFont("Aptos"))
+  par(family = "Aptos")
+```
+
+
+```{r}
+#| label: load-data
+
+data = readRDS(here::here("abstract/data/02_organized_data.rds"))
+
+glimpse(data)
+```
+
+I had 4 NAs in the identification method column. I came back to the articles and checked the identification methods. 
+I solved the problem by changing the NAs directly in the csv file. The articles that had NAS were: 
+
+
+```{r}
+#| label: data-summary
+
+# Presence of species list
+data |>
+  count(species_list) |>
+  mutate(prop = n / sum(n))
+
+# Identification methods
+data |>
+  count(identification_method) |>
+  mutate(prop = n / sum(n))
+
+# Nomenclature source
+data |>
+  count(nomenclatura_source) |>
+  mutate(prop = n / sum(n))
+
+# Voucher collection
+data |>
+  count(vouchers) |>
+  mutate(prop = n / sum(n))
+
+```
+
+
+```{r}
+#| label: summary-data
+#| code-summary: "Summary data"
+
+summary <- list(
+  species_list = data |>
+    count(species_list) |>
+    mutate(prop = round(100 * n / sum(n), 1)),
+  identification_method = data |>
+    count(identification_method) |>
+    mutate(prop = round(100 * n / sum(n), 1)),
+  nomenclatura_source = data |>
+    count(nomenclatura_source) |>
+    mutate(prop = round(100 * n / sum(n), 1)),
+  vouchers = data |>
+    count(vouchers) |>
+    mutate(prop = round(100 * n / sum(n), 1))
+)
+
+summary
+```
+
+Across the 96 vegetation studies screened, 84.4% reported a species list, while 15.6% did not provide any list of taxa. Only 10.4% of studies explicitly described their identification methods and 8.3% provided vague descriptions, whereas the remaining 81.2% did not report how species were identified. A nomenclatural source (e.g. checklist or taxonomic database) was cited in 47.9% of studies. Voucher collections were mentioned in only four studies (4.2%), indicating limited reporting of specimen-based documentation in this sample.
+
+## Questions
+
+**(1) Are studies that include a species list more likely to report the identification method or the source of nomenclature?**
+```{r}
+#| label: questions-1
+
+tab_list_id =
+ data |>
+  count(species_list, identification_method) |>
+  group_by(species_list) |>
+  mutate(prop = n / sum(n))
+
+tab_list_id
+
+tab_list_nom =
+ data |>
+  count(species_list, nomenclatura_source) |>
+  group_by(species_list) |>
+  mutate(prop = n / sum(n)) |>
+  ungroup()
+
+tab_list_nom
+```
+
+We first asked whether studies that include a species list are more likely to report the identification method or the source of nomenclature. Among the 96 studies, those without a species list never mentioned how species were identified (100% in the “no” category for identification method). In contrast, studies that did provide a species list showed a modest increase in transparency: about 22% reported some information on identification procedures (≈9.9% vague and ≈12.3% explicit), while the remaining ≈78% still did not describe how species were identified. This indicates that compiling a species list is only weakly associated with documenting the underlying identification process, and most studies remain opaque even when species composition is formally reported.
+
+A nomenclatural source was cited in 40 of 81 studies providing a species list (49.4%), compared with six of 15 studies without a list (40.0%). Thus, nomenclatural-source citation was only slightly more frequent among studies providing species lists. Species-list availability and nomenclatural reporting were distinct reporting practices: some studies cited a source without providing a list, whereas approximately half of the studies providing a list did not cite a nomenclatural source
+
+**(2) When a study takes care to cite a source for nomenclature, does it also explain how the species were identified?**
+```{r}
+#| label: questions-2
+
+tab_nom_id =
+ data |>
+  count(nomenclatura_source, identification_method) |>
+  group_by(nomenclatura_source) |>
+  mutate(prop = n / sum(n))
+
+tab_nom_id
+```
+
+We then asked whether citing a nomenclatural source (e.g. checklists or taxonomic databases) is associated with clearer reporting of identification methods. Studies that did not state any nomenclatural source almost never documented identification procedures, with ≈88% lacking any method, ≈8% providing vague descriptions and only ≈4% reporting explicit methods. In studies that did cite a nomenclatural source, explicit identification methods were more frequent (≈17.4%), and the share of vague descriptions was similar (≈8.7%), yet roughly ≈73.9% still failed to explain how species were identified. Thus, formalizing nomenclature appears to be linked to a somewhat higher probability of reporting identification methods, but even in this subset the majority of studies do not make their taxonomic procedures transparent.
+
+
+```{r}
+#| label: simple-test
+
+data_test = data |>
+  mutate(
+    id_any = identification_method != "no"
+  )
+
+# Species list × Identification information
+table_list_id =
+ table(data_test$species_list, data_test$id_any)
+
+fisher.test(table_list_id)
+
+# Nomenclature source × Identification information
+
+table_nom_id =
+ table(data_test$nomenclatura_source, data_test$id_any)
+
+fisher.test(table_nom_id)
+```
+
+The presence of a species list was associated with a higher probability of reporting any identification information (0 of 15 studies without a list vs 18 of 81 with a list), but this relationship was only marginal according to Fisher’s exact test (p ≈ 0.066, odds ratio → ∞ due to zero counts in the “no list + any identification” cell)
+
+Likewise, studies that cited a nomenclatural source tended to be more likely to report any identification information (odds ratio ≈ 2.6), but this association was weak and statistically uncertain (Fisher’s exact test, p ≈ 0.12; 95% CI ≈ 0.79–9.22). Together with the cross-tabulations, this supports the view that formalizing nomenclature and compiling species lists are only loosely coupled with transparent reporting of identification procedures.
+
+## Plots
+
+```{r}
+#| label: plot-identification-method
+
+p =
+data |>
+  count(identification_method) |>
+  mutate(
+    identification_method = forcats::fct_relevel(
+      identification_method,
+      "no", "vague", "explicit"
+    ),
+    prop = n / sum(n),
+    pct_label = percent(prop, accuracy = 1),
+    label_text = case_when(
+      identification_method == "no"      ~ "Not reported",
+      identification_method == "vague"   ~ "Vague",
+      identification_method == "explicit"~ "Explicit"
+    )) |>
+
+  ggplot(aes(x = 1, y = prop, fill = identification_method)) +
+  
+  geom_col(
+    width = 0.5,
+    position = position_stack(reverse = TRUE)
+  ) +
+
+  
+  geom_text(
+    aes(label = pct_label),
+    position = position_stack(
+      vjust = 0.5,
+      reverse = TRUE
+    ),
+    size = 5,
+    fontface = "bold",
+    color = "#252525"
+  ) +
+
+  scale_y_continuous(
+    labels = label_percent(accuracy = 1),
+    breaks = c(0, 0.25, 0.5, 0.75, 1),
+    expand = expansion(mult = c(0.015, 0.015))
+  ) +
+
+scale_x_continuous(
+  limits = c(0.72, 1.28),
+  breaks = NULL,
+  expand = expansion(mult = 0)
+) +
+
+  coord_flip() +
+
+  scale_fill_manual(
+    values = c(
+      "no"       = "#C4B8A6",
+      "vague"    = "#D9943B",
+      "explicit" = "#7A9B4A"
+    ),
+    breaks = c("no", "vague", "explicit"),
+    labels = c("Not reported", "Vague", "Explicit")
+  ) +
+
+  labs(
+    x = NULL,
+    y = NULL
+  ) +
+
+  theme_minimal(
+    base_family = "Aptos",
+    base_size = 15
+  ) +
+
+  theme(
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks = element_blank(),
+    panel.grid = element_blank(),
+    panel.border = element_blank(),
+
+    legend.position = "bottom",
+    legend.title = element_blank(),
+    legend.text = element_text(
+      size = 14,
+      color = "#252525"
+    ),
+    legend.key.width = grid::unit(0.55, "cm"),
+    legend.key.height = grid::unit(0.4, "cm"),
+    legend.margin = margin(t = 0),
+
+    plot.margin = margin(
+      t = 5, r = 15, b = 5, l = 15
+    )
+  ) +
+
+  guides(
+    fill = guide_legend(
+      nrow = 1,
+      byrow = TRUE
+    )
+  )
+
+
+ggsave(
+  filename = "poster/identification.png",
+  plot = p,
+  width = 12,
+  height = 6,
+  units = "cm",
+  dpi = 600,
+  bg = "white"
+)
+
+```
+
+
+```{r}
+
+data |>
+  dplyr::select(
+    species_list,
+    identification_method,
+    nomenclatura_source,
+    vouchers
+  ) |>
+  dplyr::mutate(
+    across(
+      everything(),
+      ~ tolower(trimws(as.character(.x)))
+    )
+  ) |>
+  tidyr::pivot_longer(
+    cols = everything(),
+    names_to = "dimension",
+    values_to = "category"
+  ) |>
+  dplyr::count(dimension, category) |>
+  print(n = Inf)
+
+
+reporting =
+ data |>
+  mutate(
+    across(
+      c(
+        species_list,
+        identification_method,
+        nomenclatura_source,
+        vouchers
+      ),
+      ~ tolower(trimws(as.character(.x)))
+    )
+  )
+
+reporting_data =
+  reporting |>
+  summarise(
+    `Species list\navailable` =
+      sum(species_list == "yes", na.rm = TRUE),
+
+    `Identification\nexplicit` =
+      sum(identification_method == "explicit", na.rm = TRUE),
+
+    `Nomenclatural source\ncited` =
+      sum(nomenclatura_source == "yes", na.rm = TRUE),
+
+    `Vouchers\nmentioned` =
+      sum(vouchers == "yes", na.rm = TRUE)
+  ) |>
+  pivot_longer(
+    cols = everything(),
+    names_to = "dimension",
+    values_to = "n_reported"
+  ) |>
+  mutate(
+    prop = n_reported / nrow(reporting),
+    pct_label = percent(prop, accuracy = 0.1),
+
+    dimension = factor(
+      dimension,
+      levels = rev(c(
+        "Species list\navailable",
+        "Identification\nexplicit",
+        "Nomenclatural source\ncited",
+        "Vouchers\nmentioned"
+      ))
+    )
+  )
+
+p1 =
+reporting_data |>
+ggplot(aes(x = prop, y = dimension)
+) +
+
+  geom_col(
+    width = 0.65,
+    fill = "#7A9B4A",
+    orientation = "y"
+  ) +
+  geom_text(
+    aes(label = pct_label),
+    hjust = -0.15,
+    size = 7,
+    fontface = "bold",
+    color = "#252525"
+  ) +
+  scale_x_continuous(
+    limits = c(0, 1.10),
+    breaks = c(0, 0.5, 1),
+    labels = label_percent(accuracy = 1),
+    expand = expansion(mult = 0)
+  ) +
+  scale_y_discrete(
+    expand = expansion(add = 0.4)
+  ) +
+  labs(
+    x = NULL,
+    y = NULL
+  ) +
+  theme_minimal(
+    base_family = "Aptos",
+    base_size = 22
+  ) +
+  theme(
+    panel.grid = element_blank(),
+    axis.ticks = element_blank(),
+
+    axis.text.y = element_text(
+      size = 22,
+      color = "#252525",
+      lineheight = 0.9,
+      margin = margin(r = 8)
+    ),
+
+    axis.text.x = element_text(
+      size = 18,
+      color = "#252525",
+      margin = margin(t = 5)
+    ),
+
+    legend.position = "none",
+    plot.margin = margin(5, 10, 5, 5)
+  )
+
+ggsave(
+  filename = "poster/reporting_dim.png",
+  plot = p1,
+  width = 22,
+  height = 14,
+  units = "cm",
+  dpi = 600,
+  bg = "white"
+)
+
+```
+## What do we learn?
+
+Based on these patterns, we argue that current vegetation studies often treat species identification as an invisible step, even when community data and trait-based classifications are used to address complex questions in community and metacommunity ecology. To improve the reproducibility and re-use of plant community data, we propose a simple, field-realistic workflow for taxa identification reporting that could be adopted across vegetation surveys:
+
+1. Explicitly state the identification tools used. Methods sections should name the main floras, field guides, and taxonomic databases consulted, including authors and years, rather than referring generically to “regional floras” or “field guides”.
+2. Define the target taxonomic resolution and treatment of difficult taxa. Authors should specify the intended resolution (species vs genus), note groups where only genus-level identifications were possible, and describe how undetermined or taxonomically unstable taxa were handled in analyses.
+3. Link identification to a nomenclatural backbone. In addition to citing floras, studies should state the checklist or database used to standardize names (e.g. national flora, Euro+Med, GBIF backbone) and briefly describe any name‐cleaning steps (e.g. use of R packages for synonym resolution).
+4. Document voucher strategy, even when limited. Full voucher sets are not always feasible, but authors can still indicate whether representative specimens were collected, where they are stored, or why vouchers were not taken (e.g. protected species, non-destructive monitoring).
+5. Make species lists and raw occurrences findable. Species lists, cover/abundance tables and metadata for identification decisions should be provided in supplementary materials or open repositories, with clear links between plot IDs, taxa and the identification/nomenclature workflow.
